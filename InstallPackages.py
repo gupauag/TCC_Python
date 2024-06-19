@@ -18,6 +18,7 @@ Também são definidos quais libs são necessárias instalar, para executar o pr
 !pip install --upgrade bigframes #lib para manipular grandes dataframes = usado para extrair os dados das tabelas do BigQuery
 !pip install bigframes google-cloud-bigquery #lib para manipular grandes dataframes = usado para extrair os dados das tabelas do BigQuery
 !pip install sqlalchemy
+!pip install pyvis
 
 #%% Import packages
 import pandas as pd

@@ -1,3 +1,4 @@
+#%% projeto
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jun 18 14:45:17 2024
@@ -13,6 +14,9 @@ import connections as con
 import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
+from pyvis.network import Network
+import networkx as nx
+
 
 # Definir os DataFrames globais
 df_socios = pd.DataFrame()
@@ -25,12 +29,24 @@ relacoes = [('1', 'A'), ('1', 'B'), ('1', '4'), ('2', 'C'), ('2', 'D'), ('3', '1
 ##rel = pd.DataFrame(relacoes, columns=["empresa","socio"])
 
 def recupera_massa():
+    """
     query = '''
        select CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (a.nome_socio,'-', a.doc_socio) as socios
             from grupo_economico.empresa_socios a 
             order by cnpj_basico
             limit 100;
         '''
+    """
+    query = '''
+        select  CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (a.nome_socio,'-', a.doc_socio) as socios
+        from grupo_economico.empresa_socios a 
+        where a.cnpj_basico in(
+        	select cnpj_basico
+        	from grupo_economico.empresa_socios
+        	where doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA'
+        	)
+        
+    '''
     return con.query_mysql_to_dataframe(query)
 
 def trata_massa_grafo(df_empresa_socios):
@@ -83,9 +99,30 @@ def visualizar_grafo(G):
 
 def contar_arestas(subgrafos):
     for subgrafo in subgrafos:
-        if subgrafo.number_of_edges() > 3:
+        if subgrafo.number_of_edges() > 5:
             visualizar_grafo(subgrafo)
+            visualiza_grafo_interativo(subgrafo)
 
+
+def visualiza_grafo_interativo(subgrafo):
+    # Crie uma rede interativa usando pyvis
+    net = Network(notebook=True, width="1000px", height="800px", directed=False)
+
+    # Adicione os nós e as arestas ao objeto pyvis Network
+    net.from_nx(subgrafo)
+    
+    # Desative a física para que os nós não se movimentem automaticamente
+    net.toggle_physics(True)
+    net.show_buttons(filter_=['physics'])
+    """
+    # Configure os nós para permitir reposicionamento manual
+    for node in net.nodes:
+        node['fixed'] = False
+        node['physics'] = False
+    """
+    
+    # Salve a visualização do grafo em um arquivo HTML
+    net.show('grafo_interativo.html')
 
 # MAIN
 if __name__ == '__main__':
