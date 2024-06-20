@@ -333,3 +333,29 @@ dataframes = [converter_grafo_para_matriz(subgrafo) for subgrafo in subgrafos]
 # Exibe os dataframes gerados
 for i, df in enumerate(dataframes):
     print(f"Matriz do subgrafo {i+1}:\n", df, "\n")
+    
+#%% externalizando dataframe
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Dados de exemplo
+data = {
+    'A': [1, 2, 3, 4],
+    'B': [4, 3, 2, 1],
+    'C': [2, 4, 1, 3],
+    'D': [3, 1, 4, 2]
+}
+df = pd.DataFrame(data, index=['1', '2', '3', '4'])
+
+# Criação do heatmap
+plt.figure(figsize=(10, 8))
+sns.heatmap(df, annot=True, cmap='coolwarm', linewidths=0.5, linecolor='black')
+
+# Configurações do gráfico
+plt.title('Heatmap da Matriz de Dados')
+plt.xlabel('Colunas')
+plt.ylabel('Linhas')
+
+# Mostrar o gráfico
+plt.show()

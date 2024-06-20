@@ -106,14 +106,35 @@ def contar_arestas(subgrafos):
 
 def visualiza_grafo_interativo(subgrafo):
     # Crie uma rede interativa usando pyvis
-    net = Network(notebook=True, width="1000px", height="800px", directed=False)
-
+    net = Network(notebook=True, width="2080px", height="1080px", directed=False)
+    
+    # Adicione os nós e as arestas ao objeto pyvis Network, identificando o tipo de nó
+    for node in subgrafo.nodes():
+        node_size = subgrafo.degree(node)
+        if node_size > 10:
+            node_size = 10
+        elif node_size >=5 & node_size < 10:
+            node_size = 5
+        else:
+            node_size = 2
+        if subgrafo.nodes[node]['tipo'] == 'socio':
+            no = ('Sócio = ' + df_socios[df_socios['socios'] == node].iloc[0]).to_string(index=False)
+            net.add_node(node, label=node, color='green', title=no, size=node_size )
+        else:
+            no = ('Empresa = ' + df_empresas[df_empresas['empresas'] == node].iloc[0]).to_string(index=False)
+            net.add_node(node, label=node, color='blue', title=no, size=node_size )
+    
+    # Adicione as arestas ao objeto pyvis Network
+    for edge in subgrafo.edges():
+        net.add_edge(edge[0], edge[1])
+    
+    
     # Adicione os nós e as arestas ao objeto pyvis Network
-    net.from_nx(subgrafo)
+    ##net.from_nx(subgrafo)
     
     # Desative a física para que os nós não se movimentem automaticamente
     net.toggle_physics(True)
-    net.show_buttons(filter_=['physics'])
+    net.show_buttons(filter_=['physics','Nodes'])
     """
     # Configure os nós para permitir reposicionamento manual
     for node in net.nodes:
