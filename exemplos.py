@@ -404,3 +404,47 @@ plt.savefig("matriz_relacoes.png")
 
 # Exibir a figura
 plt.show()
+
+
+#%%
+import pandas as pd
+import networkx as nx
+
+def criar_grafo_com_chunks_df(socios_df, empresas_df, relacoes_df, chunk_size=1000):
+    G = nx.Graph()
+    
+    # Processar sócios em chunks e adicionar nós
+    for i in range(0, len(socios_df), chunk_size):
+        chunk = socios_df.iloc[i:i+chunk_size]
+        for index, row in chunk.iterrows():
+            G.add_node(row['socios'], tipo='socio')
+    
+    # Processar empresas em chunks e adicionar nós
+    for i in range(0, len(empresas_df), chunk_size):
+        chunk = empresas_df.iloc[i:i+chunk_size]
+        for index, row in chunk.iterrows():
+            G.add_node(row['empresas'], tipo='empresa')
+    
+    # Processar relações em chunks e adicionar arestas
+    for i in range(0, len(relacoes_df), chunk_size):
+        chunk = relacoes_df.iloc[i:i+chunk_size]
+        for row in chunk.itertuples(index=False):
+            G.add_edge(row.socios, row.empresas)
+    
+    return G
+
+# Exemplo de DataFrames (socios_df, empresas_df, relacoes_df)
+socios = ['A', 'B', '4', 'C', 'D', 'E', 'F', 'G', '1']
+empresas = ['1', '2', '3', '4']
+relacoes = [('1', 'A'), ('1', 'B'), ('1', '4'), ('2', 'C'), ('2', 'D'), ('3', '1'), ('3', 'E'), ('3', 'A'), ('4', '1'), ('4', 'F'), ('4', 'G')]
+
+socios_df = pd.DataFrame(socios, columns=['socios'])
+empresas_df = pd.DataFrame(empresas, columns=['empresas'])
+relacoes_df = pd.DataFrame(relacoes, columns=['socios', 'empresas'])
+
+# Criação do grafo
+G = criar_grafo_com_chunks_df(socios_df, empresas_df, relacoes_df)
+
+# Verifique se o grafo foi criado corretamente
+print("Nós do grafo:", G.nodes())
+print("Arestas do grafo:", G.edges())

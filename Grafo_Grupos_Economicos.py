@@ -13,12 +13,13 @@ Criação de grafo de referencia entre os integantes recursivamente até termina
 import connections as con
 import ETL_BigQuery as etl
 
-import networkx as nx
 import pandas as pd
+
+import networkx as nx
+from concurrent.futures import ThreadPoolExecutor
 
 # lib para criar a visão grafica do grafo
 from pyvis.network import Network 
-import networkx as nx
 
 # lib para criar a visão grafica da matriz
 import seaborn as sns
@@ -28,7 +29,6 @@ import matplotlib.pyplot as plt
 # Definir os DataFrames globais
 df_socios = pd.DataFrame()
 df_empresas = pd.DataFrame()
-df_empresa_socios = pd.DataFrame()
 
 # Massa de exemplo exemplo
 socios = ['A', 'B','4','C', 'D','E','F','G','1']
@@ -67,7 +67,7 @@ def trata_massa_grafo(df_empresa_socios):
     df_socios = df_empresa_socios[['socios']].copy() 
     df_empresas = df_empresa_socios[['empresas']].copy() 
 
-def criar_grafo(socios, empresas, relacoes):
+def criar_grafo(socios, empresas, relacoes, chunk_size=1000):
     """
     Cria um grafo que representa as relações entre sócios e empresas.
     
@@ -77,17 +77,40 @@ def criar_grafo(socios, empresas, relacoes):
     :return: Um grafo NetworkX.
     """
     G = nx.Graph()
-    
+
+    """
+    #cria os nós do tipo sócios
     for index, row in socios.iterrows():
-        print('socio: ',row['socios'])
         G.add_node(row['socios'], tipo='socio')
+
+    #cria os nós do tipo empresas
+    for index, row in empresas.iterrows():
+        G.add_node(row['empresas'], tipo='empresa')
+    """
+    # Criar threads para adicionar nós de sócios e empresas
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        #.result é utilizado para esperar a finalização da thread
+        executor.submit(adicionar_nos_socios, G, socios).result()
+        executor.submit(adicionar_nos_empresas, G, empresas).result()
+    
+    #vincula os nós e cria as arestas do grafo
+    for row in relacoes.itertuples(index=False):
+        G.add_edge(row.socios, row.empresas)
+
+        
+    return G
+
+
+def adicionar_nos_socios(G, socios):
+    #cria os nós do tipo sócios
+    for index, row in socios.iterrows():
+        G.add_node(row['socios'], tipo='socio')
+
+def adicionar_nos_empresas(G, empresas):
+    #cria os nós do tipo empresas
     for index, row in empresas.iterrows():
         G.add_node(row['empresas'], tipo='empresa')
     
-    for row in relacoes.itertuples(index=False):
-        G.add_edge(row.socios, row.empresas)
-    
-    return G
 
 def separar_subgrafos(G):
     """
@@ -238,6 +261,7 @@ if __name__ == '__main__':
     """
     
     ## executa massivamente grafo
+        
     #processa_bigquery = False ## cria df com os dados pré grafo
     grava_grupo = False ## grava no MYSQL os grupos gerados
     table_name = 'empresa_socios_pre_grafo'
