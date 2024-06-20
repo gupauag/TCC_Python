@@ -40,7 +40,7 @@ def unload_df(table_name, sql_query):
     df = trata_campos_saida(table_name, df)
     
     fim = datetime.now()
-    dif = (fim - inicio)
+    dif = (fim - ini)
     
     print(f'unload_df: Fim do unload da tabela {table_name} :',dif)
     return df
@@ -153,6 +153,20 @@ def cria_sql_query(tabela):
             where a.data = "2023-11-16" and b.data = "2023-11-16"
         '''
         return sql_query
+    elif tabela == 'empresa_socios_pre_grafo':         #Consulta os empresasVssocios
+        sql_query = '''
+            SELECT *
+            FROM (
+            SELECT CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (c.nome,'-', c.documento) as socios
+            FROM basedosdados.br_me_cnpj.empresas a 
+            inner join basedosdados.br_me_cnpj.estabelecimentos b on a.cnpj_basico = b.cnpj_basico and b.situacao_cadastral in ("1","2","4") and b.identificador_matriz_filial = "1" 
+            inner join basedosdados.br_me_cnpj.socios c on a.cnpj_basico = c.cnpj_basico and c.data = "2023-11-16"
+            where a.data = "2023-11-16" and b.data = "2023-11-16"
+            ) as d
+            WHERE d.empresas is not null 
+                and d.socios is not null
+        '''
+        return sql_query
     else:                           #Consulta os estabelecimentos
         sql_query = '''
             SELECT cnpj_basico
@@ -181,6 +195,11 @@ def trata_campos_saida(table_name, df):
         print(f'trata_campos_saida: Incio do tratamento do dataFrame {table_name}: ' ,datetime.now().strftime('%H:%M:%S'))
         #ajusta colunas do dafa_frame empres_socios
         return df.astype(dtype= {"cnpj_basico":"object","razao_social":"object","porte":"int","tipo_socio":"int","nome_socio":"object","doc_socio":"object","qualificacao_socio":"int","faixa_etaria_socio":"int"}) 
+   
+    elif table_name == 'empresa_socios_pre_grafo':         #Consulta os empresa_socios pré criação do grafo
+        print(f'trata_campos_saida: Incio do tratamento do dataFrame {table_name}: ' ,datetime.now().strftime('%H:%M:%S'))
+        #ajusta colunas do dafa_frame empres_socios
+        return df.astype(dtype= {"empresas":"object","socios":"object"}) 
     
     else:                           #Consulta os estabelecimentos
         print(f'trata_campos_saida: Incio do tratamento do dataFrame {table_name}: ' ,datetime.now().strftime('%H:%M:%S'))
@@ -191,8 +210,8 @@ def trata_campos_saida(table_name, df):
 def control_execucao_tabelas():
     # Dados
     data = {
-        'tabela': ['empresas', 'socios', 'estabelecimentos', 'empresa_socios'],
-        'status': [True, True, True, True]
+        'tabela': ['empresas', 'socios', 'estabelecimentos', 'empresa_socios', 'empresa_socios_pre_grafo'],
+        'status': [True, True, True, True, False]
     }
     return pd.DataFrame(data)
     

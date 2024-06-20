@@ -15,14 +15,20 @@ import ETL_BigQuery as etl
 
 import networkx as nx
 import pandas as pd
-import matplotlib.pyplot as plt
-from pyvis.network import Network
+
+# lib para criar a visão grafica do grafo
+from pyvis.network import Network 
 import networkx as nx
+
+# lib para criar a visão grafica da matriz
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 # Definir os DataFrames globais
 df_socios = pd.DataFrame()
 df_empresas = pd.DataFrame()
+df_empresa_socios = pd.DataFrame()
 
 # Massa de exemplo exemplo
 socios = ['A', 'B','4','C', 'D','E','F','G','1']
@@ -45,12 +51,12 @@ def recupera_massa():
         where a.cnpj_basico in(
             select cnpj_basico
             from grupo_economico.empresa_socios
-            where #(doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
+            where (doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') 
                 #(doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
                 #(doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
                 #(doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
                 #(doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
-                (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
+                #(doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
             );
     '''
     return con.query_mysql_to_dataframe(query)
@@ -73,6 +79,7 @@ def criar_grafo(socios, empresas, relacoes):
     G = nx.Graph()
     
     for index, row in socios.iterrows():
+        print('socio: ',row['socios'])
         G.add_node(row['socios'], tipo='socio')
     for index, row in empresas.iterrows():
         G.add_node(row['empresas'], tipo='empresa')
@@ -105,9 +112,43 @@ def visualizar_grafo(G):
 
 def contar_arestas(subgrafos):
     for subgrafo in subgrafos:
+        visualizar_grafo(subgrafo)
+        visualiza_grafo_interativo(subgrafo)
+        
+    """ aplicado somente quando quero gerar varios de uma vez só q com varios grandes
+    for subgrafo in subgrafos:
         if subgrafo.number_of_edges() > 5:
             visualizar_grafo(subgrafo)
             visualiza_grafo_interativo(subgrafo)
+    """
+def converter_grafo_para_matriz(subgrafo):
+    """
+    Varrer todas as relações entre os nós de um grafo.
+    
+    :param grafo: Um grafo NetworkX.
+    """
+    visualizar_grafo(subgrafo)
+    
+    socios = [n for n, d in subgrafo.nodes(data=True) if d['tipo'] == 'socio']
+    empresas = [n for n, d in subgrafo.nodes(data=True) if d['tipo'] == 'empresa']
+    
+    
+    # Cria uma matriz com zeros
+    matriz = pd.DataFrame(0, index=socios, columns=empresas)
+    
+    for aresta in subgrafo.edges(data=True):
+        tipo_origem = subgrafo.nodes[aresta[0]]['tipo']
+        tipo_destino = subgrafo.nodes[aresta[1]]['tipo']
+        if subgrafo.nodes[aresta[0]]['tipo'] == 'socio':
+            socio = aresta[0]
+            empresa = aresta[1]
+        else:
+            socio = aresta[1]
+            empresa = aresta[0]
+        print(f"Relação entre {aresta[0]} ({tipo_origem}) e {aresta[1]} ({tipo_destino})")
+        matriz.at[socio, empresa] = 1
+    
+    return matriz
 
 
 def visualiza_grafo_interativo(subgrafo):
@@ -151,19 +192,64 @@ def visualiza_grafo_interativo(subgrafo):
     # Salve a visualização do grafo em um arquivo HTML
     net.show('grafo_interativo.html')
 
+def visualiza_matriz(df):
+    # Configurar o estilo e a paleta de cores para o heatmap
+    cmap = sns.color_palette(["white", "yellow"])
+    
+    # Criar heatmap usando Seaborn
+    plt.figure(figsize=(10, 8))
+    ax = sns.heatmap(df, annot=False, fmt="d", cmap=cmap, cbar=False, linewidths=.5, linecolor='black')
+    
+    # Ajustar os labels
+    ax.xaxis.set_label_position('top')
+    ax.xaxis.tick_top()
+    ax.set_xlabel('Empresas', fontstyle='italic')
+    ax.set_ylabel('Sócios')
+    
+    # Adicionar título na parte inferior
+    plt.title('Matriz de Relações entre Sócios e Empresas', loc='center', y=-0.1)
+    
+    # Salvar como arquivo de imagem
+    plt.savefig("matriz_relacoes.png")
+    
+    # Exibir a figura
+    plt.show()
+
+
 # MAIN
 if __name__ == '__main__':
     
+    """ massa de teste & evidencias
     df_empresa_socios = recupera_massa()
     trata_massa_grafo(df_empresa_socios)
     
     # Cria o grafo
     G = criar_grafo(df_socios, df_empresas, df_empresa_socios)
-
-    # Visualiza o grafo original
-    visualizar_grafo(G)
-    visualiza_grafo_interativo(G)
     
     # Separa os subgrafos
     subgrafos = separar_subgrafos(G)
     contar_arestas(subgrafos)
+    
+    # Converte cada subgrafo em matriz e armazena em uma lista de dataframes
+    dataframes = [converter_grafo_para_matriz(subgrafo) for subgrafo in subgrafos]
+    
+    [visualiza_matriz(df) for df in dataframes]
+    
+    """
+    
+    ## executa massivamente grafo
+    #processa_bigquery = False ## cria df com os dados pré grafo
+    grava_grupo = False ## grava no MYSQL os grupos gerados
+    table_name = 'empresa_socios_pre_grafo'
+    
+    sql_query = etl.cria_sql_query(table_name)
+    
+    df_empresa_socios = etl.unload_df(table_name, sql_query)  
+    
+    trata_massa_grafo(df_empresa_socios)
+    
+    # Cria o grafo
+    G = criar_grafo(df_socios, df_empresas, df_empresa_socios)
+    
+    # Separa os subgrafos
+    subgrafos = separar_subgrafos(G)

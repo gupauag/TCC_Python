@@ -387,7 +387,7 @@ print(matrix)
 cmap = sns.color_palette(["white", "yellow"])
 
 # Criar heatmap usando Seaborn
-plt.figure(figsize=(10, 8))
+#plt.figure(figsize=(10, 8))
 ax = sns.heatmap(matrix, annot=False, fmt="d", cmap=cmap, cbar=False, linewidths=.5, linecolor='black')
 
 # Ajustar os labels
