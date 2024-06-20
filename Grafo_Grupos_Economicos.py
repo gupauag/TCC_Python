@@ -11,6 +11,8 @@ Criação de grafo de referencia entre os integantes recursivamente até termina
 """
 
 import connections as con
+import ETL_BigQuery as etl
+
 import networkx as nx
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -38,14 +40,18 @@ def recupera_massa():
         '''
     """
     query = '''
-        select  CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (a.nome_socio,'-', a.doc_socio) as socios
+        select CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (a.nome_socio,'-', a.doc_socio) as socios
         from grupo_economico.empresa_socios a 
         where a.cnpj_basico in(
-        	select cnpj_basico
-        	from grupo_economico.empresa_socios
-        	where doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA'
-        	)
-        
+            select cnpj_basico
+            from grupo_economico.empresa_socios
+            where #(doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
+                #(doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
+                #(doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
+                #(doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
+                #(doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
+                (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
+            );
     '''
     return con.query_mysql_to_dataframe(query)
 
@@ -156,7 +162,8 @@ if __name__ == '__main__':
 
     # Visualiza o grafo original
     visualizar_grafo(G)
-
+    visualiza_grafo_interativo(G)
+    
     # Separa os subgrafos
     subgrafos = separar_subgrafos(G)
     contar_arestas(subgrafos)

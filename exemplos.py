@@ -359,3 +359,48 @@ plt.ylabel('Linhas')
 
 # Mostrar o gráfico
 plt.show()
+
+#%% dataframe - matriz
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Dados de exemplo
+socios = ['A', 'B', '4', 'C', 'D', 'E', 'F', 'G', '1']
+empresas = ['1', '2', '3', '4']
+relacoes = [('1', 'A'), ('1', 'B'), ('1', '4'), ('2', 'C'), ('2', 'D'), ('3', '1'), ('3', 'E'), ('3', 'A'), ('4', '1'), ('4', 'F'), ('4', 'G')]
+
+# Criar DataFrame
+df_relacoes = pd.DataFrame(relacoes, columns=['Empresa', 'Socio'])
+
+# Criar uma matriz de zeros
+matrix = pd.DataFrame(0, index=socios, columns=empresas)
+
+# Preencher a matriz com base nas relações
+for empresa, socio in relacoes:
+    matrix.at[socio, empresa] = 1
+
+# Depuração: imprimir a matriz
+print(matrix)
+
+# Configurar o estilo e a paleta de cores para o heatmap
+cmap = sns.color_palette(["white", "yellow"])
+
+# Criar heatmap usando Seaborn
+plt.figure(figsize=(10, 8))
+ax = sns.heatmap(matrix, annot=False, fmt="d", cmap=cmap, cbar=False, linewidths=.5, linecolor='black')
+
+# Ajustar os labels
+ax.xaxis.set_label_position('top')
+ax.xaxis.tick_top()
+ax.set_xlabel('Empresas')
+ax.set_ylabel('Sócios')
+
+# Adicionar título na parte inferior
+plt.title('Matriz de Relações entre Sócios e Empresas', loc='center', y=-0.1)
+
+# Salvar como arquivo de imagem
+plt.savefig("matriz_relacoes.png")
+
+# Exibir a figura
+plt.show()
