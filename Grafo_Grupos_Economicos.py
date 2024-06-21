@@ -238,6 +238,52 @@ def visualiza_matriz(df):
     # Exibir a figura
     plt.show()
 
+# Função para varrer as relações entre os nós do grafo
+def varrer_relacoes(subgrafo):
+    """
+    Varrer todas as relações entre os nós de um grafo.
+    
+    :param grafo: Um grafo NetworkX.
+    """
+    visualizar_grafo(subgrafo)
+    
+    socios = [n for n, d in subgrafo.nodes(data=True) if d['tipo'] == 'socio']
+    empresas = [n for n, d in subgrafo.nodes(data=True) if d['tipo'] == 'empresa']
+    
+    
+    # Cria uma matriz com zeros
+    matriz = pd.DataFrame(0, index=socios, columns=empresas)
+    
+    for aresta in subgrafo.edges(data=True):
+        tipo_origem = subgrafo.nodes[aresta[0]]['tipo']
+        tipo_destino = subgrafo.nodes[aresta[1]]['tipo']
+        if subgrafo.nodes[aresta[0]]['tipo'] == 'socio':
+            socio = aresta[0]
+            empresa = aresta[1]
+        else:
+            socio = aresta[1]
+            empresa = aresta[0]
+        print(f"Relação entre {aresta[0]} ({tipo_origem}) e {aresta[1]} ({tipo_destino})")
+        matriz.at[socio, empresa] = 1
+    
+    
+    
+    return matriz
+
+def grafa_grafo(subgrafo):
+    
+    df_grafo = pd.DataFrame()
+    
+    for aresta in subgrafo.edges(data=True):
+        if subgrafo.nodes[aresta[0]]['tipo'] == 'socio':
+            socio = aresta[0]
+            empresa = aresta[1]
+        else:
+            socio = aresta[1]
+            empresa = aresta[0]
+        new_row = {'empresas':empresas, 'obs_3':empresas, 'id_grupo':1}
+        
+        df_grafo = df_grafo.append(new_row, ignore_index=True)
 
 # MAIN
 if __name__ == '__main__':
@@ -277,3 +323,6 @@ if __name__ == '__main__':
     
     # Separa os subgrafos
     subgrafos = separar_subgrafos(G)
+    
+    # Varrer subgrafos 
+    dataframe_matriz = [varrer_relacoes(subgrafo) for subgrafo in subgrafos]

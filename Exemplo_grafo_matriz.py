@@ -103,6 +103,28 @@ def varrer_relacoes(subgrafo):
     
     return matriz
 
+
+def grava_grafo(subgrafo):
+    
+    data = {'empresas':[], 'socios':[], 'id_grupo':[]}
+    df_grafo = pd.DataFrame(columns=['empresas','socios','id_grupo'])
+    
+    for aresta in subgrafo.edges(data=True):
+        if subgrafo.nodes[aresta[0]]['tipo'] == 'socio':
+            socio = aresta[0]
+            empresa = aresta[1]
+        else:
+            socio = aresta[1]
+            empresa = aresta[0]
+        data['empresas'].append(empresa)
+        data['socios'].append(socio)
+        data['id_grupo'].append(1)
+        df_aux = pd.DataFrame({'empresas':[empresa], 'socios':[socio],'id_grupo':1})
+        
+        df_grafo = pd.concat([df_grafo, df_aux], ignore_index=True) 
+
+    print(df_grafo)
+    
 # Dados de exemplo
 socios = ['A', 'B','4','C', 'D','E','F','G','1']
 empresas = ['1', '2','3','4']
@@ -119,10 +141,12 @@ visualizar_grafo(G)
 subgrafos = separar_subgrafos(G)
 
 # Varrer subgrafos 
-dataframe_matriz = [varrer_relacoes(subgrafo) for subgrafo in subgrafos]
+#dataframe_matriz = [varrer_relacoes(subgrafo) for subgrafo in subgrafos]
 
 # Converte cada subgrafo em matriz e armazena em uma lista de dataframes
 #dataframes = [converter_grafo_para_matriz(subgrafo) for subgrafo in subgrafos]
+
+dataframe_matriz = [grava_grafo(subgrafo) for subgrafo in subgrafos]
 
 # Exibe os dataframes gerados
 for i, df in enumerate(dataframe_matriz):
