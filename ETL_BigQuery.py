@@ -157,7 +157,8 @@ def cria_sql_query(tabela):
         sql_query = '''
             SELECT *
             FROM (
-            SELECT CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas, CONCAT (c.nome,'-', c.documento) as socios
+            SELECT CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas
+                ,CONCAT (CONCAT(ARRAY_TO_STRING(ARRAY(SELECT UPPER(REGEXP_EXTRACT(x, r'(\b\w)'))FROM UNNEST(REGEXP_EXTRACT_ALL(c.nome, r'\b\w')) AS x),''), REPEAT('*', (CAST((CHAR_LENGTH(c.nome)/2) AS INT64)) - 1)),'-', c.documento) as socios
             FROM basedosdados.br_me_cnpj.empresas a 
             inner join basedosdados.br_me_cnpj.estabelecimentos b on a.cnpj_basico = b.cnpj_basico and b.situacao_cadastral in ("1","2","4") and b.identificador_matriz_filial = "1" 
             inner join basedosdados.br_me_cnpj.socios c on a.cnpj_basico = c.cnpj_basico and c.data = "2023-11-16"
