@@ -51,15 +51,47 @@ def recupera_massa():
         where a.cnpj_basico in(
             select cnpj_basico
             from grupo_economico.empresa_socios
-            where (doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') 
+            where #(doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
                 #(doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
                 #(doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
                 #(doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
                 #(doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
-                #(doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
+                (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
             );
     '''
-    return con.query_mysql_to_dataframe(query)
+    #nome mascarado
+    query = '''
+    select CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas
+        ,CONCAT(
+            CONCAT(
+                -- Extrair e concatenar as primeiras letras de cada palavra do nome
+                (SELECT GROUP_CONCAT(UPPER(SUBSTRING(SUBSTRING_INDEX(SUBSTRING_INDEX(a.nome_socio, ' ', n.n), ' ', -1), 1, 1)) SEPARATOR '')
+                 FROM 
+                 (
+                    SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+                 ) n
+                 WHERE n.n <= CHAR_LENGTH(a.nome_socio) - CHAR_LENGTH(REPLACE(a.nome_socio, ' ', '')) + 1
+                ),
+                -- Repetir '*' para metade do comprimento do nome
+                REPEAT('*', FLOOR(CHAR_LENGTH(a.nome_socio) / 2) - 1)
+            ),
+            '-',
+            a.doc_socio
+        ) AS socios	                
+                from grupo_economico.empresa_socios a 
+                where a.cnpj_basico in(
+                    select cnpj_basico
+                    from grupo_economico.empresa_socios
+                    where #(doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
+                        #(doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
+                        #(doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
+                        #(doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
+                        #(doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
+                        (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
+                    );
+    '''
+    
+    return con.query_mysql_to_dataframe(query) 
 
 def trata_massa_grafo(df_empresa_socios):
     global df_socios, df_empresas  # Declarar as variáveis globais
@@ -270,7 +302,7 @@ def varrer_relacoes(subgrafo):
     
     return matriz
 
-def grafa_grafo(subgrafo):
+def grava_grafo(subgrafo):
     
     df_grafo = pd.DataFrame()
     
@@ -288,7 +320,7 @@ def grafa_grafo(subgrafo):
 # MAIN
 if __name__ == '__main__':
     
-    """ massa de teste & evidencias
+    """ massa de teste & evidencias """
     df_empresa_socios = recupera_massa()
     trata_massa_grafo(df_empresa_socios)
     
@@ -304,8 +336,8 @@ if __name__ == '__main__':
     
     [visualiza_matriz(df) for df in dataframes]
     
+   
     """
-    
     ## executa massivamente grafo
         
     #processa_bigquery = False ## cria df com os dados pré grafo
@@ -326,3 +358,4 @@ if __name__ == '__main__':
     
     # Varrer subgrafos 
     dataframe_matriz = [varrer_relacoes(subgrafo) for subgrafo in subgrafos]
+    """
