@@ -82,12 +82,12 @@ def recupera_massa():
                 where a.cnpj_basico in(
                     select cnpj_basico
                     from grupo_economico.empresa_socios
-                    where #(doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
-                        #(doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
-                        #(doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
-                        #(doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
-                        #(doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
-                        (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') # duas emprasas diferentes
+                    where (doc_socio = '57444283000188' and nome_socio = 'INFRACON ENGENHARIA E COMERCIO LTDA') or
+                        (doc_socio = '***105976**' and nome_socio = 'FLAVIO AUGUSTO DOS SANTOS') or
+                        (doc_socio = '***798487**' and nome_socio = 'FLAVIA CASSIANO FRAGA') or
+                        (doc_socio = '27870967000180' and nome_socio = 'HODIE SERVICOS TECNICOS E GERENCIAMENTO DE OBRAS LTDA') or
+                        (doc_socio = '***436218**' and nome_socio = 'TANIA REGINA SANTIAGO PEREIRA CAMISA NOVA') or
+                        (doc_socio = '***599401**' and nome_socio = 'ALEXANDRE JUNIO MAMEDES') 
                     );
     '''
     
@@ -166,6 +166,7 @@ def visualizar_grafo(G):
     plt.show()
 
 def contar_arestas(subgrafos):
+    
     for subgrafo in subgrafos:
         visualizar_grafo(subgrafo)
         visualiza_grafo_interativo(subgrafo)
@@ -247,6 +248,48 @@ def visualiza_grafo_interativo(subgrafo):
     # Salve a visualização do grafo em um arquivo HTML
     net.show('grafo_interativo.html')
 
+def visualiza_grafo_interativo_geral(grafo):
+    # Crie uma rede interativa usando pyvis
+    net = Network(notebook=True, width="2080px", height="1080px", directed=False)
+    
+    # Adicione os nós e as arestas ao objeto pyvis Network, identificando o tipo de nó
+    for node in grafo.nodes():
+        node_size = grafo.degree(node)
+        if node_size > 10:
+            node_size = 10
+        elif node_size >=5 & node_size < 10:
+            node_size = 5
+        else:
+            node_size = 2
+        if grafo.nodes[node]['tipo'] == 'socio':
+            no = ('Sócio = ' + df_socios[df_socios['socios'] == node].iloc[0]).to_string(index=False)
+            net.add_node(node, label=node, color='green', title=no, size=node_size )
+        else:
+            no = ('Empresa = ' + df_empresas[df_empresas['empresas'] == node].iloc[0]).to_string(index=False)
+            net.add_node(node, label=node, color='blue', title=no, size=node_size )
+    
+    # Adicione as arestas ao objeto pyvis Network
+    for edge in grafo.edges():
+        net.add_edge(edge[0], edge[1])
+    
+    
+    # Adicione os nós e as arestas ao objeto pyvis Network
+    ##net.from_nx(subgrafo)
+    
+    # Desative a física para que os nós não se movimentem automaticamente
+    net.toggle_physics(True)
+    net.show_buttons(filter_=['physics','Nodes'])
+    """
+    # Configure os nós para permitir reposicionamento manual
+    for node in net.nodes:
+        node['fixed'] = False
+        node['physics'] = False
+    """
+    
+    # Salve a visualização do grafo em um arquivo HTML
+    net.show('grafo_interativo_geral.html')
+
+
 def visualiza_matriz(df):
     # Configurar o estilo e a paleta de cores para o heatmap
     cmap = sns.color_palette(["white", "yellow"])
@@ -326,6 +369,9 @@ if __name__ == '__main__':
     
     # Cria o grafo
     G = criar_grafo(df_socios, df_empresas, df_empresa_socios)
+    
+    # Cria visualização do grafo geral
+    visualiza_grafo_interativo_geral(G)
     
     # Separa os subgrafos
     subgrafos = separar_subgrafos(G)
