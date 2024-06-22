@@ -109,7 +109,7 @@ def insert_data_in_chunks(engine, dataframe, table_name, chunk_size=1000):
             chunk.to_sql(name=table_name, con=connection, if_exists='append', index=False)
             #print(f"Inserção via chunk {start} to {end}")
     fim = datetime.now()
-    dif = (fim - inicio)
+    dif = (fim - ini)
     print(f'insert_data_in_chunks: Fim do processo de inclusao {table_name}: ',dif)
 
 def cria_sql_query(tabela):
