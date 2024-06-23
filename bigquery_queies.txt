@@ -1,0 +1,41 @@
+SELECT count(1)
+FROM basedosdados.br_me_cnpj.estabelecimentos 
+where data = "2023-11-16"
+and identificador_matriz_filial = "1";
+
+SELECT
+  ARRAY_TO_STRING(ARRAY(SELECT UPPER(REGEXP_EXTRACT(x, r'(\b\w)'))FROM UNNEST(REGEXP_EXTRACT_ALL('TANIA MARIA', r'\b\w')) AS x),'') AS initials;
+
+SELECT 
+  CONCAT (CONCAT(ARRAY_TO_STRING(ARRAY(SELECT UPPER(REGEXP_EXTRACT(x, r'(\b\w)'))FROM UNNEST(REGEXP_EXTRACT_ALL('TANIA MARIA', r'\b\w')) AS x),''), REPEAT('*', (CAST((CHAR_LENGTH('TANIA MARIA')/2) AS INT64)) - 1)),'-', '111') as socios;
+
+SELECT CAST((CHAR_LENGTH('TANIA MARIA')/2) AS INT64);
+
+select *
+from (
+SELECT CONCAT (a.cnpj_basico,'-',a.razao_social) as empresas
+                ,CONCAT (CONCAT(ARRAY_TO_STRING(ARRAY(SELECT UPPER(REGEXP_EXTRACT(x, r'(\b\w)'))FROM UNNEST(REGEXP_EXTRACT_ALL(c.nome, r'\b\w')) AS x),''), REPEAT('*', (CAST((CHAR_LENGTH(c.nome)/2) AS INT64)) - 1)),'-', c.documento) as socios
+FROM basedosdados.br_me_cnpj.empresas a 
+inner join basedosdados.br_me_cnpj.estabelecimentos b on a.cnpj_basico = b.cnpj_basico and b.situacao_cadastral in ("1","2","4") and b.identificador_matriz_filial = "1" 
+inner join basedosdados.br_me_cnpj.socios c on a.cnpj_basico = c.cnpj_basico and c.data = "2023-11-16"
+where a.data = "2023-11-16" and b.data = "2023-11-16"
+) as d
+where d.empresas is not null 
+and d.socios is not null
+limit 1000;
+
+
+select count(1), d.documento, d.nome
+from (
+  SELECT distinct c.documento,c.nome, a.cnpj_basico
+  FROM basedosdados.br_me_cnpj.empresas a 
+  inner join basedosdados.br_me_cnpj.estabelecimentos b on a.cnpj_basico = b.cnpj_basico and b.situacao_cadastral in ("1","2","4") and b.identificador_matriz_filial = "1" 
+  inner join basedosdados.br_me_cnpj.socios c on a.cnpj_basico = c.cnpj_basico and c.data = "2023-11-16"
+  where a.data = "2023-11-16" and b.data = "2023-11-16"
+  
+) as d
+group by  d.documento, d.nome
+having count(1) = 2
+
+
+
