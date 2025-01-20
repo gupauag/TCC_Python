@@ -272,19 +272,12 @@ def visualiza_grafo_interativo_geral(grafo):
     for edge in grafo.edges():
         net.add_edge(edge[0], edge[1])
     
-    
     # Adicione os nós e as arestas ao objeto pyvis Network
     ##net.from_nx(subgrafo)
     
     # Desative a física para que os nós não se movimentem automaticamente
     net.toggle_physics(True)
     net.show_buttons(filter_=['physics','Nodes'])
-    """
-    # Configure os nós para permitir reposicionamento manual
-    for node in net.nodes:
-        node['fixed'] = False
-        node['physics'] = False
-    """
     
     # Salve a visualização do grafo em um arquivo HTML
     net.show('grafo_interativo_geral.html')
